@@ -1,0 +1,76 @@
+modules = ["nodejs-22"]
+
+[agent]
+stack = "AGENT_STACK"
+stackVersion = "3.0"
+automationTriggerConnectorName = "legacy_timebased"
+integrations = ["google-sheet:1.0.0", "replitmail:1.0.0", "google-mail:1.0.0"]
+
+[nix]
+channel = "stable-24_11"
+packages = ["jq", "glib", "nss", "nspr", "at-spi2-atk", "cups", "libdrm", "pango", "cairo", "alsa-lib", "mesa", "expat", "xorg.libX11", "xorg.libXcomposite", "xorg.libXdamage", "xorg.libXext", "xorg.libXfixes", "xorg.libXrandr", "xorg.libxcb", "dbus", "gtk3", "at-spi2-core", "libxkbcommon"]
+
+[env]
+MASTRA_HIDE_CLOUD_CTA = "true"
+
+[deployment]
+build = ["bash", "scripts/build.sh"]
+run = ["bash", "scripts/start-production.sh"]
+deploymentTarget = "vm"
+
+[[ports]]
+localPort = 3000
+externalPort = 3000
+exposeLocalhost = true
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[[ports]]
+localPort = 8289
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start inngest server"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "mastra dev"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "automations"
+
+[[workflows.workflow]]
+name = "Start inngest server"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "./scripts/inngest.sh"
+waitForPort = 3000
+
+[workflows.workflow.metadata]
+outputType = "automations"
+
+[userenv]
+
+[userenv.shared]
+SCHEDULE_CRON_EXPRESSION = "0 12 * * 1"
