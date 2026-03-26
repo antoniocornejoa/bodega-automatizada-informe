@@ -47,7 +47,7 @@ jobs:
 
       # 4. Instalar dependencias
       - name: Instalar dependencias
-        run: npm ci
+        run: npm install --legacy-peer-deps
 
       # 5. Build del proyecto
       - name: Build Mastra
