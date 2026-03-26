@@ -292,7 +292,8 @@ export const scrapeIConstruyeTool = createTool({
             (o) =>
               o.value !== "-1" &&
               o.value !== "0" &&
-              !o.text.trim().toUpperCase().includes("DOCUMENTOS EXCLUIDOS")
+              !o.text.trim().toUpperCase().includes("DOCUMENTOS EXCLUIDOS") &&
+              !o.text.trim().toUpperCase().includes("PRUEBAS Y CAPACITACION")
           )
           .map((o) => ({
             value: o.value,
