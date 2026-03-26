@@ -201,8 +201,7 @@ export const sendReportTool = createTool({
 
     try {
       const result = await sendGmail({
-        to: "mleivac@cindependencia.cl, claudio.contreras@cindependencia.cl",
-        cc: "acornejo@cindependencia.cl",
+        to: "acornejo@cindependencia.cl",
         subject: `Informe de Bodega - ${dateStr}`,
         html: htmlContent,
         attachments: [
