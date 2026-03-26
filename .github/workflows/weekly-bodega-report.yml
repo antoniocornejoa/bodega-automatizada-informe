@@ -68,7 +68,7 @@ jobs:
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
 
           # iConstruye
-          ICONSTRUYE_USER: ${{ secrets.ICONSTRUYE_USER }}
+          ICONSTRUYE_USERNAME: ${{ secrets.ICONSTRUYE_USERNAME }}
           ICONSTRUYE_PASSWORD: ${{ secrets.ICONSTRUYE_PASSWORD }}
 
           # OpenAI (para el agente Mastra)
