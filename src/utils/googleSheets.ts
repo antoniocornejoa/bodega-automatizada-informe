@@ -1,54 +1,27 @@
+// Google Sheets client - Service Account authentication (GitHub Actions compatible)
+// Reemplaza la integración con Replit Connectors por credenciales de Service Account
 import { google } from "googleapis";
 
-let connectionSettings: any;
+function getAuthClient() {
+    const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+    const key = (process.env.GOOGLE_PRIVATE_KEY || "").replace(/\\n/g, "\n");
 
-async function getAccessToken() {
-  if (
-    connectionSettings &&
-    connectionSettings.settings.expires_at &&
-    new Date(connectionSettings.settings.expires_at).getTime() > Date.now()
-  ) {
-    return connectionSettings.settings.access_token;
+  if (!email || !key) {
+        throw new Error(
+                "Se requieren las variables de entorno GOOGLE_SERVICE_ACCOUNT_EMAIL y GOOGLE_PRIVATE_KEY"
+              );
   }
 
-  const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
-  const xReplitToken = process.env.REPL_IDENTITY
-    ? "repl " + process.env.REPL_IDENTITY
-    : process.env.WEB_REPL_RENEWAL
-      ? "depl " + process.env.WEB_REPL_RENEWAL
-      : null;
-
-  if (!xReplitToken) {
-    throw new Error("X-Replit-Token not found for repl/depl");
-  }
-
-  connectionSettings = await fetch(
-    "https://" +
-      hostname +
-      "/api/v2/connection?include_secrets=true&connector_names=google-sheet",
-    {
-      headers: {
-        Accept: "application/json",
-        "X-Replit-Token": xReplitToken,
-      },
-    }
-  )
-    .then((res) => res.json())
-    .then((data) => data.items?.[0]);
-
-  const accessToken =
-    connectionSettings?.settings?.access_token ||
-    connectionSettings.settings?.oauth?.credentials?.access_token;
-
-  if (!connectionSettings || !accessToken) {
-    throw new Error("Google Sheet not connected");
-  }
-  return accessToken;
+  return new google.auth.GoogleAuth({
+        credentials: {
+                client_email: email,
+                private_key: key,
+        },
+        scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+  });
 }
 
 export async function getUncachableGoogleSheetClient() {
-  const accessToken = await getAccessToken();
-  const oauth2Client = new google.auth.OAuth2();
-  oauth2Client.setCredentials({ access_token: accessToken });
-  return google.sheets({ version: "v4", auth: oauth2Client });
+    const auth = getAuthClient();
+    return google.sheets({ version: "v4", auth });
 }
