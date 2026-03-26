@@ -21,7 +21,7 @@ console.log(`🔧 Modo: ${process.env.DRY_RUN === 'true' ? 'PRUEBA (no envía em
 
 try {
   // Importar el workflow compilado
-  const { automationWorkflow } = await import('../.mastra/output/workflows/workflow.js');
+  const { automationWorkflow } = await import('../.mastra/output/index.mjs');
 
   // Ejecutar el workflow directamente
   const result = await automationWorkflow.execute({
