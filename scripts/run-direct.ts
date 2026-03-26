@@ -15,25 +15,30 @@
 // IMPORTANTE: dotenv debe ser el primer import para cargar .env antes que todo
 import 'dotenv/config';
 
+import fs   from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
 import { scrapeIConstruyeTool }  from '../src/mastra/tools/scrapeIConstruyeTool.js';
 import { fetchExcessTool }       from '../src/mastra/tools/fetchExcessTool.js';
 import { fetchAssignmentsTool }  from '../src/mastra/tools/fetchAssignmentsTool.js';
 import { classifyResourcesTool } from '../src/mastra/tools/classifyResourcesTool.js';
 import { generateReportTool }    from '../src/mastra/tools/generateReportTool.js';
 import { sendReportTool }        from '../src/mastra/tools/sendReportTool.js';
+import { generateDashboardHTML } from '../src/utils/generateDashboard.js';
 
 // ---------------------------------------------------------------------------
-// Configuracion
+// Configuración
 // ---------------------------------------------------------------------------
 const isDryRun = process.env.DRY_RUN === 'true';
 
-console.log('Iniciando Reporte Semanal de Bodega (ejecucion directa)...');
-console.log(`Fecha: ${new Date().toLocaleString('es-CL', { timeZone: 'America/Santiago' })}`);
-console.log(`Modo: ${isDryRun ? 'PRUEBA (no envia email)' : 'PRODUCCION'}`);
+console.log('🚀 Iniciando Reporte Semanal de Bodega (ejecución directa)...');
+console.log(`📅 Fecha: ${new Date().toLocaleString('es-CL', { timeZone: 'America/Santiago' })}`);
+console.log(`🔧 Modo: ${isDryRun ? 'PRUEBA (no envía email)' : 'PRODUCCIÓN'}`);
 
 // ---------------------------------------------------------------------------
-// Contexto minimo de Mastra - solo necesitamos el logger
-// Las herramientas solo usan mastra?.getLogger(), nada mas.
+// Contexto mínimo de Mastra — solo necesitamos el logger
+// Las herramientas solo usan mastra?.getLogger(), nada más.
 // ---------------------------------------------------------------------------
 const mockMastra = {
   getLogger: () => ({
@@ -50,7 +55,7 @@ const ctx = { mastra: mockMastra as any };
 // ---------------------------------------------------------------------------
 // Paso 1: Scraping de inventario iConstruye
 // ---------------------------------------------------------------------------
-console.log('\n=== Paso 1/5: Scraping iConstruye ===');
+console.log('\n═══ Paso 1/5: Scraping iConstruye ═══');
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const step1 = await (scrapeIConstruyeTool as any).execute({}, ctx) as {
@@ -67,14 +72,14 @@ const step1 = await (scrapeIConstruyeTool as any).execute({}, ctx) as {
 };
 
 if (step1.error) {
-  throw new Error(`Fallo el scraping de iConstruye: ${step1.message}`);
+  throw new Error(`Falló el scraping de iConstruye: ${step1.message}`);
 }
-console.log(`[Paso 1] ${step1.recordCount} centros, ${step1.detailCount} items detallados`);
+console.log(`✅ [Paso 1] ${step1.recordCount} centros, ${step1.detailCount} ítems detallados`);
 
 // ---------------------------------------------------------------------------
 // Paso 2: Excedentes desde Google Sheets
 // ---------------------------------------------------------------------------
-console.log('\n=== Paso 2/5: Excedentes Google Sheets ===');
+console.log('\n═══ Paso 2/5: Excedentes Google Sheets ═══');
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const step2 = await (fetchExcessTool as any).execute({}, ctx) as {
@@ -85,14 +90,14 @@ const step2 = await (fetchExcessTool as any).execute({}, ctx) as {
 };
 
 if (step2.error) {
-  throw new Error(`Fallo obtencion de excedentes: ${step2.message}`);
+  throw new Error(`Falló obtención de excedentes: ${step2.message}`);
 }
-console.log(`[Paso 2] ${step2.recordCount} registros de excedentes`);
+console.log(`✅ [Paso 2] ${step2.recordCount} registros de excedentes`);
 
 // ---------------------------------------------------------------------------
 // Paso 2.5: Asignaciones semanales
 // ---------------------------------------------------------------------------
-console.log('\n=== Paso 2.5/5: Asignaciones semanales ===');
+console.log('\n═══ Paso 2.5/5: Asignaciones semanales ═══');
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const step3 = await (fetchAssignmentsTool as any).execute({}, ctx) as {
@@ -106,14 +111,14 @@ const step3 = await (fetchAssignmentsTool as any).execute({}, ctx) as {
 };
 
 if (step3.error) {
-  throw new Error(`Fallo obtencion de asignaciones: ${step3.message}`);
+  throw new Error(`Falló obtención de asignaciones: ${step3.message}`);
 }
-console.log(`[Paso 2.5] ${step3.totalAssignments} asignaciones, valor: $${Math.round(step3.totalValorizado).toLocaleString('es-CL')}`);
+console.log(`✅ [Paso 2.5] ${step3.totalAssignments} asignaciones, valor: $${Math.round(step3.totalValorizado).toLocaleString('es-CL')}`);
 
 // ---------------------------------------------------------------------------
-// Paso 2.7: Clasificacion de recursos
+// Paso 2.7: Clasificación de recursos
 // ---------------------------------------------------------------------------
-console.log('\n=== Paso 2.7/5: Clasificacion de recursos ===');
+console.log('\n═══ Paso 2.7/5: Clasificación de recursos ═══');
 
 const classifyInput = step1.detailItems.map(item => ({
   codigo: item.codigo,
@@ -141,14 +146,14 @@ const step4 = await (classifyResourcesTool as any).execute({ detailItems: classi
 };
 
 if (step4.error) {
-  throw new Error(`Fallo clasificacion de recursos: ${step4.message}`);
+  throw new Error(`Falló clasificación de recursos: ${step4.message}`);
 }
-console.log(`[Paso 2.7] SI: ${step4.inventariableCount}, NO: ${step4.noInventariableCount}, Sin clasificar: ${step4.unclassifiedCount}`);
+console.log(`✅ [Paso 2.7] SI: ${step4.inventariableCount}, NO: ${step4.noInventariableCount}, Sin clasificar: ${step4.unclassifiedCount}`);
 
 // ---------------------------------------------------------------------------
 // Paso 3: Generar reporte Excel
 // ---------------------------------------------------------------------------
-console.log('\n=== Paso 3/5: Generando reporte Excel ===');
+console.log('\n═══ Paso 3/5: Generando reporte Excel ═══');
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const step5 = await (generateReportTool as any).execute({
@@ -166,21 +171,55 @@ const step5 = await (generateReportTool as any).execute({
 };
 
 if (step5.error) {
-  throw new Error(`Fallo generacion del reporte: ${step5.message}`);
+  throw new Error(`Falló generación del reporte: ${step5.message}`);
 }
-console.log(`[Paso 3] Reporte generado: ${step5.fileName}`);
+console.log(`✅ [Paso 3] Reporte generado: ${step5.fileName}`);
+
+// ---------------------------------------------------------------------------
+// Paso 3.5: Generar dashboard web (dist/index.html)
+// ---------------------------------------------------------------------------
+console.log('\n═══ Paso 3.5/5: Generando dashboard web ═══');
+
+const dashboardHTML = generateDashboardHTML({
+  inventoryRecords:     step1.inventoryRecords,
+  excessRecords:        step2.excessRecords,
+  detailItems:          step1.detailItems,
+  classifications:      step4.classifications,
+  weeklyAssignments:    step3.totalAssignments,
+  weeklyValorizado:     step3.totalValorizado,
+  weekStart:            step3.weekStart,
+  weekEnd:              step3.weekEnd,
+  assignmentsByDestino: step3.byDestino,
+  valorNoInventariable: step4.valorNoInventariable,
+  valorInventariable:   step4.valorInventariable,
+  valorSinClasificar:   step4.valorSinClasificar,
+  noInventariableCount: step4.noInventariableCount,
+  inventariableCount:   step4.inventariableCount,
+  unclassifiedCount:    step4.unclassifiedCount,
+  totalResources:       step4.totalResources,
+  inventoryPivotCount:  step5.inventoryPivotCount,
+  excessPivotCount:     step5.excessPivotCount,
+});
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const distDir   = path.join(__dirname, '..', 'dist');
+if (!fs.existsSync(distDir)) fs.mkdirSync(distDir, { recursive: true });
+
+const dashboardPath = path.join(distDir, 'index.html');
+fs.writeFileSync(dashboardPath, dashboardHTML, 'utf-8');
+console.log(`✅ [Paso 3.5] Dashboard generado: dist/index.html (${Math.round(dashboardHTML.length / 1024)} KB)`);
 
 // ---------------------------------------------------------------------------
 // Paso 4: Enviar email (se salta en DRY_RUN)
 // ---------------------------------------------------------------------------
 if (isDryRun) {
-  console.log('\n=== Paso 4/5: Email (OMITIDO - DRY_RUN=true) ===');
-  console.log('Se habria enviado el archivo:', step5.fileName);
+  console.log('\n═══ Paso 4/5: Email (OMITIDO — DRY_RUN=true) ═══');
+  console.log('📧 Se habría enviado el archivo:', step5.fileName);
   console.log('   Inventario por centros:', step5.inventoryPivotCount);
   console.log('   Excedentes por obra:   ', step5.excessPivotCount);
   console.log('   Asignaciones semana:   ', step3.totalAssignments);
 } else {
-  console.log('\n=== Paso 4/5: Enviando reporte por correo ===');
+  console.log('\n═══ Paso 4/5: Enviando reporte por correo ═══');
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const step6 = await (sendReportTool as any).execute({
@@ -203,10 +242,10 @@ if (isDryRun) {
   }, ctx) as { success: boolean; messageId: string; error?: boolean; message?: string };
 
   if (step6.error) {
-    throw new Error(`Fallo el envio de correo: ${step6.message}`);
+    throw new Error(`Falló el envío de correo: ${step6.message}`);
   }
-  console.log(`[Paso 4] Email enviado exitosamente. MessageId: ${step6.messageId}`);
+  console.log(`✅ [Paso 4] Email enviado exitosamente. MessageId: ${step6.messageId}`);
 }
 
-console.log('\nReporte semanal completado exitosamente!');
-console.log(`Finalizado: ${new Date().toLocaleString('es-CL', { timeZone: 'America/Santiago' })}`);
+console.log('\n✅ ¡Reporte semanal completado exitosamente!');
+console.log(`📅 Finalizado: ${new Date().toLocaleString('es-CL', { timeZone: 'America/Santiago' })}`);
