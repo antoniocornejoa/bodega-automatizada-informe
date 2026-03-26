@@ -1,21 +1,26 @@
 # ============================================================
 # GitHub Actions - Reporte Semanal Bodega
-# Corre todos los lunes a las 12:00 (hora Chile, UTC-3 15:00 UTC)
+# Corre todos los lunes a las 12:00 (hora Chile, UTC-3 → 15:00 UTC)
 # Alternativa GRATIS a Replit Deployments
 # ============================================================
 
 name: Reporte Semanal Bodega
 
 on:
+  # Cron: lunes 15:00 UTC = 12:00 Chile (horario normal)
   schedule:
     - cron: '0 15 * * 1'
 
+  # También permite ejecutarlo manualmente desde GitHub
   workflow_dispatch:
     inputs:
       dry_run:
-        description: 'Modo prueba (no envia email)'
+        description: 'Modo prueba (no envía email)'
         required: false
         default: 'false'
+
+permissions:
+  contents: write
 
 jobs:
   run-bodega-report:
@@ -24,37 +29,65 @@ jobs:
     timeout-minutes: 60
 
     steps:
-      - name: Checkout codigo
+      # 1. Checkout del código
+      - name: Checkout código
         uses: actions/checkout@v4
 
+      # 2. Configurar Node.js 22
       - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
 
+      # 3. Instalar dependencias (sin descargar Chrome — ensureChrome() lo maneja en runtime)
       - name: Instalar dependencias
         env:
           PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: true
         run: npm install --legacy-peer-deps
 
+      # 4. Ejecutar el reporte directamente con tsx (sin compilar)
       - name: Ejecutar Reporte Bodega
         env:
+          # Base de datos
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+          # Google Sheets
           GOOGLE_SERVICE_ACCOUNT_EMAIL: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_EMAIL }}
           GOOGLE_PRIVATE_KEY: ${{ secrets.GOOGLE_PRIVATE_KEY }}
+
+          # Gmail
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+
+          # iConstruye
           ICONSTRUYE_USERNAME: ${{ secrets.ICONSTRUYE_USERNAME }}
           ICONSTRUYE_PASSWORD: ${{ secrets.ICONSTRUYE_PASSWORD }}
+
+          # OpenAI (para el agente Mastra)
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+          # Anthropic Claude (para auto-corrección de código)
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+          # Modo de ejecución
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+
         run: npx tsx scripts/run-direct.ts
 
+      # 5. Publicar dashboard en GitHub Pages (rama gh-pages)
+      - name: Publicar dashboard en GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages
+          commit_message: 'chore: actualizar dashboard bodega ${{ github.run_number }}'
+
+      # 7. Notificar si falla (email/Slack)
       - name: Notificar falla
         if: failure()
         uses: actions/github-script@v7
         with:
           script: |
-            console.log('El reporte de bodega fallo. Revisar logs en:', context.serverUrl + '/' + context.repo.owner + '/' + context.repo.repo + '/actions/runs/' + context.runId);
+            console.log('❌ El reporte de bodega falló. Revisar logs en:', context.serverUrl + '/' + context.repo.owner + '/' + context.repo.repo + '/actions/runs/' + context.runId);
