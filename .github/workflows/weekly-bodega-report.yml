@@ -51,6 +51,8 @@ jobs:
 
       # 5. Build del proyecto
       - name: Build Mastra
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
         run: npm run build
 
       # 6. Ejecutar el workflow de bodega directamente
