@@ -10,6 +10,10 @@
  *  - No requiere paso de build
  *
  * Uso: npx tsx scripts/run-direct.ts
+ *
+ * Lógica de ejecución:
+ *  - Scraping + dashboard: TODOS los días (actualiza la web)
+ *  - Email con Excel:      Solo los LUNES (o si FORCE_EMAIL=true)
  */
 
 // IMPORTANTE: dotenv debe ser el primer import para cargar .env antes que todo
@@ -30,11 +34,17 @@ import { generateDashboardHTML } from '../src/utils/generateDashboard.js';
 // ---------------------------------------------------------------------------
 // Configuración
 // ---------------------------------------------------------------------------
-const isDryRun = process.env.DRY_RUN === 'true';
+const isDryRun   = process.env.DRY_RUN === 'true';
+const forceEmail = process.env.FORCE_EMAIL === 'true';
 
-console.log('🚀 Iniciando Reporte Semanal de Bodega (ejecución directa)...');
+// Email solo los lunes (getDay() === 1) salvo que se fuerce con FORCE_EMAIL=true
+const todayIsMonday   = new Date().getDay() === 1;
+const shouldSendEmail = !isDryRun && (todayIsMonday || forceEmail);
+
+console.log('🚀 Iniciando Reporte de Bodega (ejecución directa)...');
 console.log(`📅 Fecha: ${new Date().toLocaleString('es-CL', { timeZone: 'America/Santiago' })}`);
 console.log(`🔧 Modo: ${isDryRun ? 'PRUEBA (no envía email)' : 'PRODUCCIÓN'}`);
+console.log(`📧 Email: ${shouldSendEmail ? 'SÍ se enviará (es lunes o FORCE_EMAIL=true)' : 'NO se enviará (no es lunes)'}`);
 
 // ---------------------------------------------------------------------------
 // Contexto mínimo de Mastra — solo necesitamos el logger
@@ -176,7 +186,7 @@ if (step5.error) {
 console.log(`✅ [Paso 3] Reporte generado: ${step5.fileName}`);
 
 // ---------------------------------------------------------------------------
-// Paso 3.5: Generar dashboard web (dist/index.html)
+// Paso 3.5: Generar dashboard web (dist/index.html) — se ejecuta SIEMPRE
 // ---------------------------------------------------------------------------
 console.log('\n═══ Paso 3.5/5: Generando dashboard web ═══');
 
@@ -210,16 +220,17 @@ fs.writeFileSync(dashboardPath, dashboardHTML, 'utf-8');
 console.log(`✅ [Paso 3.5] Dashboard generado: dist/index.html (${Math.round(dashboardHTML.length / 1024)} KB)`);
 
 // ---------------------------------------------------------------------------
-// Paso 4: Enviar email (se salta en DRY_RUN)
+// Paso 4: Enviar email — SOLO los lunes (o si FORCE_EMAIL=true)
 // ---------------------------------------------------------------------------
-if (isDryRun) {
-  console.log('\n═══ Paso 4/5: Email (OMITIDO — DRY_RUN=true) ═══');
+if (!shouldSendEmail) {
+  const reason = isDryRun ? 'DRY_RUN=true' : 'no es lunes';
+  console.log(`\n═══ Paso 4/5: Email (OMITIDO — ${reason}) ═══`);
   console.log('📧 Se habría enviado el archivo:', step5.fileName);
   console.log('   Inventario por centros:', step5.inventoryPivotCount);
   console.log('   Excedentes por obra:   ', step5.excessPivotCount);
   console.log('   Asignaciones semana:   ', step3.totalAssignments);
 } else {
-  console.log('\n═══ Paso 4/5: Enviando reporte por correo ═══');
+  console.log('\n═══ Paso 4/5: Enviando reporte por correo (es lunes) ═══');
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const step6 = await (sendReportTool as any).execute({
@@ -247,5 +258,5 @@ if (isDryRun) {
   console.log(`✅ [Paso 4] Email enviado exitosamente. MessageId: ${step6.messageId}`);
 }
 
-console.log('\n✅ ¡Reporte semanal completado exitosamente!');
+console.log('\n✅ ¡Reporte de bodega completado exitosamente!');
 console.log(`📅 Finalizado: ${new Date().toLocaleString('es-CL', { timeZone: 'America/Santiago' })}`);
