@@ -2,46 +2,11 @@ import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
 import { getUncachableGoogleSheetClient } from "../../utils/googleSheets";
 
-const CLASSIFICATION_SPREADSHEET_NAME = "Clasificación Inventario - Bodega";
-
-async function findOrCreateClassificationSpreadsheet(sheets: any, logger: any): Promise<string> {
-  const drive = (await import("googleapis")).google.drive({
-    version: "v3",
-    auth: sheets.context._options.auth,
-  });
-
-  const searchRes = await drive.files.list({
-    q: `name='${CLASSIFICATION_SPREADSHEET_NAME}' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false`,
-    fields: "files(id,name)",
-    spaces: "drive",
-  });
-
-  const files = searchRes.data.files || [];
-  if (files.length > 0) {
-    logger?.info(`📋 [classifyResources] Spreadsheet encontrado: ${files[0].id}`);
-    return files[0].id!;
-  }
-
-  const createRes = await sheets.spreadsheets.create({
-    requestBody: {
-      properties: {
-        title: CLASSIFICATION_SPREADSHEET_NAME,
-      },
-      sheets: [
-        {
-          properties: {
-            title: "Clasificación Inventario",
-            index: 0,
-          },
-        },
-      ],
-    },
-  });
-
-  const newId = createRes.data.spreadsheetId!;
-  logger?.info(`📋 [classifyResources] Spreadsheet nuevo creado: ${newId}`);
-  return newId;
-}
+// Spreadsheet pre-creado manualmente y compartido con la cuenta de servicio como Editor.
+// ID fijo para evitar depender de Drive API para búsqueda/creación.
+const CLASSIFICATION_SPREADSHEET_ID =
+  process.env.CLASSIFICATION_SPREADSHEET_ID ||
+  "1rWKE69VTDqwym5mf5p3YzjhcRHzSwDcumLMiD5RCARk";
 
 export const classifyResourcesTool = createTool({
   id: "classify-resources",
@@ -101,7 +66,8 @@ export const classifyResourcesTool = createTool({
     logger?.info(`📋 [classifyResources] ${byCode.size} recursos únicos encontrados en inventario`);
 
     const sheets = await getUncachableGoogleSheetClient();
-    const spreadsheetId = await findOrCreateClassificationSpreadsheet(sheets, logger);
+    const spreadsheetId = CLASSIFICATION_SPREADSHEET_ID;
+    logger?.info(`📋 [classifyResources] Usando spreadsheet ID: ${spreadsheetId}`);
 
     const existingClassifications = new Map<string, string>();
 
