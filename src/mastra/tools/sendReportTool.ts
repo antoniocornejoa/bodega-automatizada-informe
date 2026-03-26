@@ -183,6 +183,15 @@ export const sendReportTool = createTool({
         
         ${assignmentsSection}
         
+        <h3 style="color: #2E75B6;">Dashboard Web Interactivo</h3>
+        <p style="margin: 10px 0;">
+          También puedes ver el informe completo en el dashboard web:<br>
+          <a href="https://antoniocornejoa.github.io/bodega-automatizada-informe/"
+             style="color: #1a6b72; font-weight: bold; font-size: 15px;">
+            🌐 Ver Dashboard de Bodega
+          </a>
+        </p>
+
         <h3 style="color: #2E75B6;">Contenido del archivo adjunto</h3>
         <ul>
           <li><strong>Informe Consolidado:</strong> Stock valorizado + excedentes por Centro de Gestión</li>
@@ -192,7 +201,7 @@ export const sendReportTool = createTool({
           <li><strong>Inventario General:</strong> Materiales únicos agrupados por código, ordenados por valor descendente</li>
           <li><strong>Clasificación Recursos:</strong> Listado de materiales con su clasificación inventariable/no inventariable</li>
         </ul>
-        
+
         <p style="color: #666; font-size: 12px; margin-top: 20px;">
           Este informe fue generado automáticamente.
         </p>
