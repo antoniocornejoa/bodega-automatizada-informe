@@ -1,15 +1,15 @@
 # ============================================================
 # GitHub Actions - Reporte Bodega + Dashboard Diario
-# Dashboard: todos los días a las 12:00 Chile (15:00 UTC)
+# Dashboard: todos los días a las 08:00 Chile (11:00 UTC)
 # Correo con Excel: solo los lunes (la lógica está en run-direct.ts)
 # ============================================================
 
 name: Reporte Bodega + Dashboard Diario
 
 on:
-  # Cron: todos los días 15:00 UTC = 12:00 Chile (horario normal)
+  # Cron: todos los días 11:00 UTC = 08:00 Chile (horario normal)
   schedule:
-    - cron: '0 15 * * *'
+    - cron: '0 11 * * *'
 
   # También permite ejecutarlo manualmente desde GitHub
   workflow_dispatch:
