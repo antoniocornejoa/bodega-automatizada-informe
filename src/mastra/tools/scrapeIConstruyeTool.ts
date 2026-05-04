@@ -208,7 +208,7 @@ export const scrapeIConstruyeTool = createTool({
         `🔑 [scrapeIConstruye] Navegando al login: ${LOGIN_URL}`
       );
       await page.goto(LOGIN_URL, {
-        waitUntil: "networkidle2",
+        waitUntil: "load",
         timeout: 60000,
       });
 
@@ -234,7 +234,7 @@ export const scrapeIConstruyeTool = createTool({
 
       try {
         await page.waitForNavigation({
-          waitUntil: "networkidle2",
+          waitUntil: "load",
           timeout: 30000,
         });
       } catch {
@@ -260,10 +260,11 @@ export const scrapeIConstruyeTool = createTool({
         `📂 [scrapeIConstruye] Navegando al reporte: ${REPORT_URL}`
       );
       await page.goto(REPORT_URL, {
-        waitUntil: "networkidle2",
+        waitUntil: "load",
         timeout: 60000,
       });
 
+      await page.waitForSelector("#chkValorizado", { visible: true, timeout: 30000 });
       await page.click("#chkValorizado");
       await page.select("#lstStock", "1");
       await new Promise((r) => setTimeout(r, 500));
