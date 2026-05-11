@@ -39,7 +39,7 @@ const forceEmail = process.env.FORCE_EMAIL === 'true';
 
 // Email solo los lunes (getDay() === 1) salvo que se fuerce con FORCE_EMAIL=true
 const todayIsMonday   = new Date().getDay() === 1;
-const shouldSendEmail = !isDryRun && (todayIsMonday || forceEmail);
+const shouldSendEmail = false; // email desactivado — solo reporte HTML en GitHub Pages
 
 console.log('🚀 Iniciando Reporte de Bodega (ejecución directa)...');
 console.log(`📅 Fecha: ${new Date().toLocaleString('es-CL', { timeZone: 'America/Santiago' })}`);
