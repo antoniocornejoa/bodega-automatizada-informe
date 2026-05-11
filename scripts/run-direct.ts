@@ -91,39 +91,36 @@ console.log(`✅ [Paso 1] ${step1.recordCount} centros, ${step1.detailCount} ít
 // ---------------------------------------------------------------------------
 console.log('\n═══ Paso 2/5: Excedentes Google Sheets ═══');
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const step2 = await (fetchExcessTool as any).execute({}, ctx) as {
-  excessRecords: { obraOrigen: string; valorExcedente: number }[];
-  recordCount: number;
-  error?: boolean;
-  message?: string;
-};
-
-if (step2.error) {
-  throw new Error(`Falló obtención de excedentes: ${step2.message}`);
+let step2: { excessRecords: { obraOrigen: string; valorExcedente: number }[]; recordCount: number; error?: boolean; message?: string; } = { excessRecords: [], recordCount: 0 };
+try {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  step2 = await (fetchExcessTool as any).execute({}, ctx) as typeof step2;
+  if (step2.error) {
+    console.warn(`⚠ [Paso 2] Error excedentes: ${step2.message} — continuando sin datos`);
+    step2 = { excessRecords: [], recordCount: 0 };
+  }
+} catch (err) {
+  console.warn(`⚠ [Paso 2] Sin acceso a excedentes: ${(err as Error).message} — continuando sin datos`);
 }
-console.log(`✅ [Paso 2] ${step2.recordCount} registros de excedentes`);
+console.log(`✓✓ [Paso 2] ${step2.recordCount} registros de excedentes`);
 
 // ---------------------------------------------------------------------------
 // Paso 2.5: Asignaciones semanales
 // ---------------------------------------------------------------------------
 console.log('\n═══ Paso 2.5/5: Asignaciones semanales ═══');
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const step3 = await (fetchAssignmentsTool as any).execute({}, ctx) as {
-  totalAssignments: number;
-  totalValorizado: number;
-  weekStart: string;
-  weekEnd: string;
-  byDestino: { destino: string; count: number; valor: number }[];
-  error?: boolean;
-  message?: string;
-};
-
-if (step3.error) {
-  throw new Error(`Falló obtención de asignaciones: ${step3.message}`);
+let step3: { totalAssignments: number; totalValorizado: number; weekStart: string; weekEnd: string; byDestino: { destino: string; count: number; valor: number }[]; error?: boolean; message?: string; } = { totalAssignments: 0, totalValorizado: 0, weekStart: '', weekEnd: '', byDestino: [] };
+try {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  step3 = await (fetchAssignmentsTool as any).execute({}, ctx) as typeof step3;
+  if (step3.error) {
+    console.warn(`⚠ [Paso 2.5] Error asignaciones: ${step3.message} — continuando sin datos`);
+    step3 = { totalAssignments: 0, totalValorizado: 0, weekStart: '', weekEnd: '', byDestino: [] };
+  }
+} catch (err) {
+  console.warn(`⚠ [Paso 2.5] Sin acceso a asignaciones: ${(err as Error).message} — continuando sin datos`);
 }
-console.log(`✅ [Paso 2.5] ${step3.totalAssignments} asignaciones, valor: $${Math.round(step3.totalValorizado).toLocaleString('es-CL')}`);
+console.log(`✓✓ [Paso 2.5] ${step3.totalAssignments} asignaciones, valor: $${Math.round(step3.totalValorizado).toLocaleString('es-CL')}`);
 
 // ---------------------------------------------------------------------------
 // Paso 2.7: Clasificación de recursos
