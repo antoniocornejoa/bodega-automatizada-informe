@@ -56,7 +56,7 @@ function fmtShort(n: number): string {
   return "$" + n;
 }
 
-export function generateDashboard(data: DashboardData): string {
+export function generateDashboardHTML(data: DashboardData): string {
   const totalInventario = data.inventoryRecords.reduce(
     (s, r) => s + r.stockValorizado,
     0
@@ -187,7 +187,7 @@ export function generateDashboard(data: DashboardData): string {
     "  border:1px solid var(--border); box-shadow:0 1px 4px rgba(0,0,0,.06);\n" +
     "}\n" +
     ".chart-card h3 { font-size:13px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:14px; }\n" +
-    ".chart-wrap { position:relative; height:260px; }\n" +
+    ".chart-wrap { position:relative; height:280px; min-height:200px; }\n" +
     "\n" +
     "/* TABLES */\n" +
     ".table-card {\n" +
